@@ -11,9 +11,10 @@ use Ds\Set;
  * 
  */
 function highlightWords($text, $array_of_words) {
-    $array_of_words_in_lower_case = array_map(strtolower(...), $array_of_words);
     $set_of_words = new Set();
-    $set_of_words->add(...$array_of_words_in_lower_case);
+    foreach ($array_of_words as $word) {
+        $set_of_words->add(strtolower($word));
+    }
 
     $result_text = '';
     $word = '';
