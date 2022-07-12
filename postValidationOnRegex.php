@@ -11,8 +11,8 @@ function postValidationOnRegex($text) {
 
     $attrs_per_tags = [
         'a' => [
-            'href' => false,
-            'title' => false,
+            'href',
+            'title',
         ],
     ];
 
@@ -27,32 +27,25 @@ function postValidationOnRegex($text) {
             }
         } else {
             $tag = preg_replace('/="([^"]*)"/' , '', $tag);
-            $exploded_tag = explode(' ', $tag);
-            $tag = $exploded_tag[0];
-
-            if (!in_array($tag, $tags)) {
-                return false;
-            }
-
-            if (count($exploded_tag) > 1) {
-                if (!array_key_exists($tag, $attrs_per_tags)) {
-                    return false;
-                }
-
-                for ($i = 1; $i < count($exploded_tag); $i++) {
-                    $attr = $exploded_tag[$i];
-                    if (!array_key_exists($attr, $attrs_per_tags[$tag]) || $attrs_per_tags[$tag][$attr]) {
+            preg_match('/^[a-z]+/', $tag, $matches);
+            $tag_name = $matches[0];
+            $tag = preg_replace('/^[a-z]*/', '', $tag);
+            if (array_key_exists($tag_name, $attrs_per_tags)) {
+                foreach ($attrs_per_tags[$tag_name] as $attr) {
+                    preg_match_all("/\s\b$attr\b/", $tag, $matches);
+                    if (count($matches[0]) > 1) {
                         return false;
                     }
-                    $attrs_per_tags[$tag][$attr] = true;
-                }
-    
-                foreach($attrs_per_tags[$tag] as &$v) {
-                    $v = false;
+                    $tag = preg_replace("/\s\b$attr\b/", '', $tag);
                 }
             }
-
-            $stack_of_tags[] = $tag;
+            if ($tag !== '') {
+                return false;
+            }
+            if (!in_array($tag_name, $tags)) {
+                return false;
+            }
+            $stack_of_tags[] = $tag_name;
         }
     }
 
