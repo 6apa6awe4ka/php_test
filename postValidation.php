@@ -14,8 +14,8 @@ function postValidation(string $text): bool {
 
     $attrs_per_tags = [
         'a' => [
-            'href',
-            'title',
+            'href' => false,
+            'title' => false,
         ],
     ];
 
@@ -39,9 +39,6 @@ function postValidation(string $text): bool {
                 continue;
             }
             if ($l === '>') {
- /**
- * <<<mark1
- */
                 if (!in_array($tag, $tags)) {
                     /** 
                      * Валидация не пройдена 
@@ -51,12 +48,16 @@ function postValidation(string $text): bool {
                 $trig = 0;
                 $tags_stack[] = $tag;
                 continue;
-/**
- * >>>mark1
- */
             }
             if ($l === ' ') {
+                if (!in_array($tag, $tags)) {
+                    /** 
+                     * Валидация не пройдена 
+                     */
+                    return false;
+                }
                 $trig = 11;
+                $tags_stack[] = $tag;
                 continue;
             }
         }
@@ -84,14 +85,15 @@ function postValidation(string $text): bool {
  */
         if ($trig === 11) {
             if ($l === '=') {
-                $attrs = $attrs_per_tags[$tag];
-                if (!in_array($attr, $attrs)) {
+                if (!array_key_exists($attr, $attrs_per_tags[$tag]) || $attrs_per_tags[$tag][$attr]) {
                     /** 
                      * Валидация не пройдена 
                      */
                     return false;
                 }
+                $attrs_per_tags[$tag][$attr] = true;
                 $trig = 12;
+                $attr = '';
                 continue;
             }
             $attr .= $l;
@@ -115,25 +117,15 @@ function postValidation(string $text): bool {
         }
         if ($trig === 14) {
             if ($l === ' ') {
-                $attr = '';
+                /** Устанавливается значение на повторяющихся пробелах */
+                $trig = 11;
                 continue;
             }
             if ($l === '>') {
-/**
- * <<<mark1
- */
-                if (!in_array($tag, $tags)) {
-                    /** 
-                     * Валидация не пройдена 
-                     */
-                    return false;
-                }
                 $trig = 0;
-                $tags_stack[] = $tag;
-                continue;
-/**
- * >>>mark1
- */
+                foreach ($attrs_per_tags[$tag] as &$v) {
+                    $v = false;
+                }
             }
             continue;
         }
@@ -155,3 +147,4 @@ var_dump(postValidation('<i> test</i> text <code> ') === false);
 var_dump(postValidation('<ii></ii>') === false);
 var_dump(postValidation('<code>test</code>lala<i>New</i>strong man<b> next</b> test wrong tags') === false);
 var_dump(postValidation('Text <code><i><strong>example</i></strong></code>') === false);
+var_dump(postValidation('<a title="something" title="something more">txt</a>') === false);
