@@ -20,6 +20,7 @@ function postValidation(string $text): bool {
     ];
 
     $trig = 0;
+    $codeTrig = false;
     $tag = '';
     $tags_stack = [];
     $attr = '';
@@ -41,6 +42,7 @@ function postValidation(string $text): bool {
             if ($l === '>') {
                 if ($tag === 'code') {
                     $trig = 3;
+                    $codeTrig = true;
                     $tag = '';
                     continue;
                 }
@@ -81,19 +83,20 @@ function postValidation(string $text): bool {
         if ($trig === 3) {
             if ($l === '/' && $text[$i - 1] === '<') {
                 $trig = 4;
-                continue;
             }
+            continue;
         }
         if ($trig === 4) {
             if ($l === '>') {
                 if ($tag === 'code') {
+                    $codeTrig = false;
                     $trig = 0;
-                    continue;
+                } else {
+                    $trig = 3;
+                    $tag = '';
                 }
+                continue;
             }
-            $trig = 3;
-            $tag = '';
-            continue;
         }
 /**
  * Атрибуты
@@ -136,8 +139,7 @@ function postValidation(string $text): bool {
             }
             if ($l === '>') {
 /**
- * <<<mark2
- * дубль mark1, пока не пойму
+ * <<<mark1
  */
                 if (!in_array($tag, $tags)) {
                     /** 
@@ -149,7 +151,7 @@ function postValidation(string $text): bool {
                 $tags_stack[] = $tag;
                 continue;
 /**
- * >>>mark2
+ * >>>mark1
  */
             }
             continue;
@@ -157,27 +159,22 @@ function postValidation(string $text): bool {
 
         $tag .= $l;
     }
-
-    return !(bool)$tags_stack;
+    
+    return !(bool)$tags_stack && !$codeTrig;
 }
 
 
-//true
-$txt1 = '<code><i><tr></code>';
-//true
-$txt2 = '<a href="something" title="something more">txt</a>';
-//false
-$txt3 = '<a nohref="something" title="something more">txt</a>';
-//true
-$txt4 = '123<i>123<strong>123</strong></i>123';
-//false
-$txt5 = '<i>123<strong>123</strong>';
-//false
-$txt6 = '<i>123<strong>123</i>';
+var_dump(postValidation('<code><i><tr></code>') === true);
+var_dump(postValidation('<a href="something" title="something more">txt</a>') === true);
+var_dump(postValidation('<a nohref="something" title="something more">txt</a>') === false);
+var_dump(postValidation('123<i>123<strong>123</strong></i>123') === true);
+var_dump(postValidation('<i>123<strong>123</strong>') === false);
+var_dump(postValidation('<i>123<strong>123</i>') === false);
+var_dump(postValidation('<i> test</i> text <code> ') === false);
+var_dump(postValidation('<ii></ii>') === false);
 
-var_dump(postValidation($txt1) === true);
-var_dump(postValidation($txt2) === true);
-var_dump(postValidation($txt3) === false);
-var_dump(postValidation($txt4) === true);
-var_dump(postValidation($txt5) === false);
-var_dump(postValidation($txt6) === false);
+
+/**
+ * Это под вопросом
+ */
+// var_dump(postValidation('Text <code><i><strong>example</i></strong></code>') === false);
