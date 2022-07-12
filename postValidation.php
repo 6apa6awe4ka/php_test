@@ -20,7 +20,6 @@ function postValidation(string $text): bool {
     ];
 
     $trig = 0;
-    $codeTrig = false;
     $tag = '';
     $tags_stack = [];
     $attr = '';
@@ -40,12 +39,6 @@ function postValidation(string $text): bool {
                 continue;
             }
             if ($l === '>') {
-                if ($tag === 'code') {
-                    $trig = 3;
-                    $codeTrig = true;
-                    $tag = '';
-                    continue;
-                }
  /**
  * <<<mark1
  */
@@ -85,18 +78,6 @@ function postValidation(string $text): bool {
                 $trig = 4;
             }
             continue;
-        }
-        if ($trig === 4) {
-            if ($l === '>') {
-                if ($tag === 'code') {
-                    $codeTrig = false;
-                    $trig = 0;
-                } else {
-                    $trig = 3;
-                    $tag = '';
-                }
-                continue;
-            }
         }
 /**
  * Атрибуты
@@ -160,11 +141,11 @@ function postValidation(string $text): bool {
         $tag .= $l;
     }
     
-    return !(bool)$tags_stack && !$codeTrig;
+    return !(bool)$tags_stack;
 }
 
 
-var_dump(postValidation('<code><i><tr></code>') === true);
+var_dump(postValidation('<code><i><tr></code>') === false);
 var_dump(postValidation('<a href="something" title="something more">txt</a>') === true);
 var_dump(postValidation('<a nohref="something" title="something more">txt</a>') === false);
 var_dump(postValidation('123<i>123<strong>123</strong></i>123') === true);
@@ -172,9 +153,5 @@ var_dump(postValidation('<i>123<strong>123</strong>') === false);
 var_dump(postValidation('<i>123<strong>123</i>') === false);
 var_dump(postValidation('<i> test</i> text <code> ') === false);
 var_dump(postValidation('<ii></ii>') === false);
-
-
-/**
- * Это под вопросом
- */
-// var_dump(postValidation('Text <code><i><strong>example</i></strong></code>') === false);
+var_dump(postValidation('<code>test</code>lala<i>New</i>strong man<b> next</b> test wrong tags') === false);
+var_dump(postValidation('Text <code><i><strong>example</i></strong></code>') === false);
