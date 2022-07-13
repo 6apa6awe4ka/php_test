@@ -32,11 +32,7 @@ function postValidationOnRegex($text) {
             $tag = preg_replace('/^[a-z]*/', '', $tag);
             if (array_key_exists($tag_name, $attrs_per_tags)) {
                 foreach ($attrs_per_tags[$tag_name] as $attr) {
-                    preg_match_all("/\s\b$attr\b/", $tag, $matches);
-                    if (count($matches[0]) > 1) {
-                        return false;
-                    }
-                    $tag = preg_replace("/\s\b$attr\b/", '', $tag);
+                    $tag = preg_replace("/\s\b$attr\b/", '', $tag, 1);
                 }
             }
             if ($tag !== '') {
