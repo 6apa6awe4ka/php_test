@@ -4,69 +4,6 @@ require './vendor/autoload.php';
 
 use Ds\Set;
 
-const LOWER_TO_UPPER_UTF8 = [
-    'a' => 'A',
-    'b' => 'B',
-    'c' => 'C',
-    'd' => 'D',
-    'e' => 'E',
-    'f' => 'F',
-    'g' => 'G',
-    'h' => 'H',
-    'i' => 'I',
-    'j' => 'J',
-    'k' => 'K',
-    'l' => 'L',
-    'm' => 'M',
-    'n' => 'N',
-    'o' => 'O',
-    'p' => 'P',
-    'q' => 'Q',
-    'r' => 'R',
-    's' => 'S',
-    't' => 'T',
-    'u' => 'U',
-    'v' => 'V',
-    'w' => 'W',
-    'x' => 'X',
-    'y' => 'Y',
-    'z' => 'Z',
-    
-    'а' => 'А',
-    'б' => 'Б',
-    'в' => 'В',
-    'г' => 'Г',
-    'д' => 'Д',
-    'е' => 'Е',
-    'ё' => 'Ё',
-    'ж' => 'Ж',
-    'з' => 'З',
-    'и' => 'И',
-    'й' => 'Й',
-    'к' => 'К',
-    'л' => 'Л',
-    'м' => 'М',
-    'н' => 'Н',
-    'о' => 'О',
-    'п' => 'П',
-    'р' => 'Р',
-    'с' => 'С',
-    'т' => 'Т',
-    'у' => 'У',
-    'ф' => 'Ф',
-    'х' => 'Х',
-    'ц' => 'Ц',
-    'ч' => 'Ч',
-    'ш' => 'Ш',
-    'щ' => 'Щ',
-    'ъ' => 'Ъ',
-    'ы' => 'Ы',
-    'ь' => 'Ь',
-    'э' => 'Э',
-    'ю' => 'Ю',
-    'я' => 'Я',
-];
-
 /**
  * 
  * Не учтены знаки препинания и буквы {Е/Ё}.
@@ -74,12 +11,11 @@ const LOWER_TO_UPPER_UTF8 = [
  * Ну и прочая грамматика естественно не учтена, склонения и т. д..
  * 
  */
-function highlightWords(string $text, array $array_of_words, ?callable $strtoupperCallable = null): string {
-    $strtoupperCallable = $strtoupperCallable ?? strtoupper(...);
+function highlightWords(string $text, array $array_of_words): string {
     $set_of_words = new Set();
     $set_of_highlighted_words = new Set();
     foreach ($array_of_words as $word) {
-        $set_of_words->add($strtoupperCallable($word));
+        $set_of_words->add(mb_strtoupper($word, 'UTF-8'));
     }
 
     $result_text = '';
@@ -88,7 +24,7 @@ function highlightWords(string $text, array $array_of_words, ?callable $strtoupp
         $l = $text[$i];
         
         if ($l === ' ') {
-            $result_text .= highlightWord($word, $set_of_words, $set_of_highlighted_words, $strtoupperCallable);
+            $result_text .= highlightWord($word, $set_of_words, $set_of_highlighted_words);
             $result_text .= ' ';
             $word = '';
             continue;
@@ -96,13 +32,13 @@ function highlightWords(string $text, array $array_of_words, ?callable $strtoupp
 
         $word .= $l;
     }
-    $result_text .= highlightWord($word, $set_of_words, $set_of_highlighted_words, $strtoupperCallable);
+    $result_text .= highlightWord($word, $set_of_words, $set_of_highlighted_words);
 
     return $result_text;
 }
 
-function highlightWord(string $word, Set $set_of_words, Set $set_of_highlighted_words, $strtoupperCallable) {
-    $lowercased_word = $strtoupperCallable($word);
+function highlightWord(string $word, Set $set_of_words, Set $set_of_highlighted_words) {
+    $lowercased_word = mb_strtoupper($word, 'UTF-8');
     if (
         !$set_of_highlighted_words->contains($lowercased_word) && 
         $set_of_words->contains($lowercased_word)
@@ -112,15 +48,6 @@ function highlightWord(string $word, Set $set_of_words, Set $set_of_highlighted_
     }
     return  "$word";
 }
-
-function strtoupper_utf8($word) {
-    $result_word = '';
-    foreach (preg_split('//u', $word, -1, PREG_SPLIT_NO_EMPTY) as $l) {
-        $result_word .= LOWER_TO_UPPER_UTF8[$l] ?? $l;
-    }
-    return $result_word;
-}
-
 
 var_dump(
     highlightWords(
@@ -137,7 +64,6 @@ var_dump(
         [
             'мама', 'Раму',
         ],
-        strtoupper_utf8(...)
     ) === '[Мама] мЫла [раму] мама'
 );
 
@@ -147,6 +73,5 @@ var_dump(
         [
             'мама', 'ramu',
         ],
-        strtoupper_utf8(...)
     ) === '[Мама] мЫла [raMu] мама'
 );
